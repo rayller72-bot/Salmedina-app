@@ -13,7 +13,7 @@ function load(key) {
   try {
     const r = localStorage.getItem(key);
     return r ? JSON.parse(r) : null;
-  }  catch { return null; }
+  } catch { return null; }
 }
 function save(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
@@ -658,6 +658,149 @@ function Dashboard({ obreros, proyectos, asistencia, pagos, materiales }) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// USUARIOS (puedes cambiar estas credenciales)
+// ══════════════════════════════════════════════════════════════════
+const USUARIOS = [
+  { usuario: "admin",    clave: "salmedina2024", rol: "Administrador", nombre: "Administrador" },
+  { usuario: "gerente",  clave: "obras2024",     rol: "Gerente",       nombre: "Gerente de Obras" },
+  { usuario: "obrero1",  clave: "obrero123",     rol: "Supervisor",    nombre: "Supervisor" },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// PANTALLA DE LOGIN
+// ══════════════════════════════════════════════════════════════════
+function LoginScreen({ onLogin }) {
+  const [usuario, setUsuario] = useState("");
+  const [clave, setClave] = useState("");
+  const [verClave, setVerClave] = useState(false);
+  const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
+
+  const handleLogin = () => {
+    if (!usuario || !clave) { setError("Completa todos los campos"); return; }
+    setCargando(true);
+    setError("");
+    setTimeout(() => {
+      const user = USUARIOS.find(u => u.usuario === usuario.toLowerCase().trim() && u.clave === clave);
+      if (user) {
+        onLogin(user);
+      } else {
+        setError("Usuario o contraseña incorrectos");
+        setCargando(false);
+      }
+    }, 800);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0a1628 0%, #1a2f55 60%, #0f2040 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+      {/* Logo */}
+      <div style={{ textAlign: "center", marginBottom: 36 }}>
+        <img src="/logo.jpg" alt="Logo" style={{ height: 100, width: 100, objectFit: "contain", borderRadius: 20, background: "#fff", padding: 6, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", marginBottom: 16 }} />
+        <div style={{ fontWeight: 900, fontSize: 24, color: "#fff", letterSpacing: "0.06em" }}>SALMEDINA</div>
+        <div style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.14em" }}>CONSTRUCCIONES SRL</div>
+        <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, letterSpacing: "0.06em" }}>OBRAS QUE PERDURAN EN EL TIEMPO</div>
+      </div>
+
+      {/* Card */}
+      <div style={{ background: "#fff", borderRadius: 20, padding: "32px 28px", width: "100%", maxWidth: 380, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+        <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800, color: "#111" }}>Iniciar sesión</h2>
+        <p style={{ margin: "0 0 24px", fontSize: 13, color: "#888" }}>Ingresa tus credenciales para continuar</p>
+
+        <Field label="Usuario">
+          <Input
+            value={usuario}
+            onChange={e => { setUsuario(e.target.value); setError(""); }}
+            placeholder="Tu nombre de usuario"
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+          />
+        </Field>
+
+        <Field label="Contraseña">
+          <div style={{ position: "relative" }}>
+            <Input
+              type={verClave ? "text" : "password"}
+              value={clave}
+              onChange={e => { setClave(e.target.value); setError(""); }}
+              placeholder="Tu contraseña"
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              style={{ paddingRight: 44 }}
+            />
+            <button onClick={() => setVerClave(!verClave)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 14 }}>
+              {verClave ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </Field>
+
+        {error && (
+          <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleLogin}
+          disabled={cargando}
+          style={{ width: "100%", background: cargando ? "#94a3b8" : "linear-gradient(135deg, #f97316, #ea580c)", color: "#fff", border: "none", padding: "14px", borderRadius: 12, fontWeight: 800, cursor: cargando ? "not-allowed" : "pointer", fontSize: 16, marginTop: 8, letterSpacing: "0.02em" }}
+        >
+          {cargando ? "Verificando..." : "Entrar →"}
+        </button>
+      </div>
+
+      <div style={{ marginTop: 24, fontSize: 11, color: "#334155", textAlign: "center" }}>
+        Sistema de Gestión © Salmedina Construcciones SRL
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PANEL DE USUARIOS (solo admin)
+// ══════════════════════════════════════════════════════════════════
+function PanelUsuarios({ usuarioActual, onCerrar }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Usuarios del sistema</h2>
+          <p style={{ margin: "4px 0 0", color: "#888", fontSize: 14 }}>Credenciales de acceso</p>
+        </div>
+        <button onClick={onCerrar} style={{ background: "#f3f4f6", border: "none", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>← Volver</button>
+      </div>
+
+      <div style={{ background: "#fef3c7", border: "1.5px solid #f59e0b", borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "#92400e" }}>
+        💡 Para cambiar usuarios y contraseñas, edita el archivo <strong>src/App.jsx</strong> en la sección <strong>USUARIOS</strong> al inicio del código.
+      </div>
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {USUARIOS.map((u, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: u.rol === "Administrador" ? "#fef3c7" : "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                {u.rol === "Administrador" ? "👑" : u.rol === "Gerente" ? "👷" : "🔧"}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#111" }}>{u.nombre}</div>
+                <div style={{ fontSize: 13, color: "#888" }}>Rol: {u.rol}</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 12, background: "#f8fafc", borderRadius: 10, padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 2 }}>USUARIO</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#0a1628", fontFamily: "monospace" }}>{u.usuario}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 2 }}>CONTRASEÑA</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#0a1628", fontFamily: "monospace" }}>{u.clave}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
 // APP PRINCIPAL
 // ══════════════════════════════════════════════════════════════════
 export default function App() {
@@ -668,23 +811,42 @@ export default function App() {
   const [pagos, setPagos] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [cargado, setCargado] = useState(false);
+  const [usuarioActual, setUsuarioActual] = useState(null);
+  const [mostrarUsuarios, setMostrarUsuarios] = useState(false);
 
   useEffect(() => {
-    const o  = load(KEYS.obreros);
-    const pr = load(KEYS.proyectos);
-    const a  = load(KEYS.asistencia);
-    const pg = load(KEYS.pagos);
-    const m  = load(KEYS.materiales);
-    setObreros(o || SEED.obreros);
-    setProyectos(pr || SEED.proyectos);
-    setAsistencia(a || SEED.asistencia);
-    setPagos(pg || SEED.pagos);
-    setMateriales(m || SEED.materiales);
-    if (!o) save(KEYS.obreros, SEED.obreros);
-    if (!pr) save(KEYS.proyectos, SEED.proyectos);
-    if (!m) save(KEYS.materiales, SEED.materiales);
-    setCargado(true);
+    // Verificar sesión guardada
+    try {
+      const sesion = sessionStorage.getItem("salmedina:sesion");
+      if (sesion) setUsuarioActual(JSON.parse(sesion));
+    } catch {}
+
+    (async () => {
+      const [o, pr, a, pg, m] = await Promise.all([
+        load(KEYS.obreros), load(KEYS.proyectos), load(KEYS.asistencia), load(KEYS.pagos), load(KEYS.materiales)
+      ]);
+      setObreros(o || SEED.obreros);
+      setProyectos(pr || SEED.proyectos);
+      setAsistencia(a || SEED.asistencia);
+      setPagos(pg || SEED.pagos);
+      setMateriales(m || SEED.materiales);
+      if (!o) save(KEYS.obreros, SEED.obreros);
+      if (!pr) save(KEYS.proyectos, SEED.proyectos);
+      if (!m) save(KEYS.materiales, SEED.materiales);
+      setCargado(true);
+    })();
   }, []);
+
+  const handleLogin = (user) => {
+    setUsuarioActual(user);
+    try { sessionStorage.setItem("salmedina:sesion", JSON.stringify(user)); } catch {}
+  };
+
+  const handleLogout = () => {
+    setUsuarioActual(null);
+    setMostrarUsuarios(false);
+    try { sessionStorage.removeItem("salmedina:sesion"); } catch {}
+  };
 
   if (!cargado) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #0a1628 0%, #1a2f55 100%)" }}>
@@ -696,6 +858,8 @@ export default function App() {
       </div>
     </div>
   );
+
+  if (!usuarioActual) return <LoginScreen onLogin={handleLogin} />;
 
   const navItems = [
     { id: "dashboard", icon: "helmet", label: "Inicio" },
@@ -718,31 +882,44 @@ export default function App() {
             <div style={{ fontSize: 9, color: "#94a3b8", letterSpacing: "0.06em", marginTop: 1 }}>OBRAS QUE PERDURAN EN EL TIEMPO</div>
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b" }}>{obreros.filter(o => o.activo).length}</div>
-          <div style={{ fontSize: 10, color: "#94a3b8" }}>obreros activos</div>
+        {/* Usuario + logout */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ textAlign: "right", cursor: usuarioActual.rol === "Administrador" ? "pointer" : "default" }} onClick={() => usuarioActual.rol === "Administrador" && setMostrarUsuarios(true)}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b" }}>{usuarioActual.nombre}</div>
+            <div style={{ fontSize: 10, color: "#94a3b8" }}>{usuarioActual.rol}{usuarioActual.rol === "Administrador" ? " · 👑" : ""}</div>
+          </div>
+          <button onClick={handleLogout} title="Cerrar sesión" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "6px 10px", cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 600 }}>
+            Salir
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px 100px" }}>
-        {tab === "dashboard" && <Dashboard obreros={obreros} proyectos={proyectos} asistencia={asistencia} pagos={pagos} materiales={materiales} />}
-        {tab === "obreros" && <ModObreros obreros={obreros} setObreros={setObreros} />}
-        {tab === "proyectos" && <ModProyectos proyectos={proyectos} setProyectos={setProyectos} />}
-        {tab === "asistencia" && <ModAsistencia obreros={obreros} asistencia={asistencia} setAsistencia={setAsistencia} proyectos={proyectos} />}
-        {tab === "pagos" && <ModPagos obreros={obreros} asistencia={asistencia} pagos={pagos} setPagos={setPagos} proyectos={proyectos} />}
-        {tab === "materiales" && <ModMateriales materiales={materiales} setMateriales={setMateriales} proyectos={proyectos} />}
+        {mostrarUsuarios && usuarioActual.rol === "Administrador"
+          ? <PanelUsuarios usuarioActual={usuarioActual} onCerrar={() => setMostrarUsuarios(false)} />
+          : <>
+            {tab === "dashboard" && <Dashboard obreros={obreros} proyectos={proyectos} asistencia={asistencia} pagos={pagos} materiales={materiales} />}
+            {tab === "obreros" && <ModObreros obreros={obreros} setObreros={setObreros} />}
+            {tab === "proyectos" && <ModProyectos proyectos={proyectos} setProyectos={setProyectos} />}
+            {tab === "asistencia" && <ModAsistencia obreros={obreros} asistencia={asistencia} setAsistencia={setAsistencia} proyectos={proyectos} />}
+            {tab === "pagos" && <ModPagos obreros={obreros} asistencia={asistencia} pagos={pagos} setPagos={setPagos} proyectos={proyectos} />}
+            {tab === "materiales" && <ModMateriales materiales={materiales} setMateriales={setMateriales} proyectos={proyectos} />}
+          </>
+        }
       </div>
 
       {/* Bottom Nav */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #f0f0f0", display: "flex", boxShadow: "0 -4px 20px rgba(0,0,0,0.08)", zIndex: 50 }}>
-        {navItems.map(n => (
-          <button key={n.id} onClick={() => setTab(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 4px 12px", background: "none", border: "none", cursor: "pointer", color: tab === n.id ? "#f97316" : "#bbb", gap: 3 }}>
-            <Icon name={n.icon} size={20} />
-            <span style={{ fontSize: 10, fontWeight: tab === n.id ? 700 : 500, letterSpacing: "0.02em" }}>{n.label}</span>
-          </button>
-        ))}
-      </div>
+      {!mostrarUsuarios && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #f0f0f0", display: "flex", boxShadow: "0 -4px 20px rgba(0,0,0,0.08)", zIndex: 50 }}>
+          {navItems.map(n => (
+            <button key={n.id} onClick={() => setTab(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 4px 12px", background: "none", border: "none", cursor: "pointer", color: tab === n.id ? "#f97316" : "#bbb", gap: 3 }}>
+              <Icon name={n.icon} size={20} />
+              <span style={{ fontSize: 10, fontWeight: tab === n.id ? 700 : 500, letterSpacing: "0.02em" }}>{n.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
